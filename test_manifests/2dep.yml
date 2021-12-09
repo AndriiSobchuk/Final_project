@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts-jdk11
+        ports:
+        - containerPort: 8080
+        - containerPort: 50000
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /home/ubuntu/jenkins_home/:/var/lib/jenkins
+        - name: docker-home
+          mountPath: /var/run/docker.sock:/var/run/docker.sock
+        - name: docker-path
+          mountPath: /usr/bin/docker:/usr/bin/docker
+        - name: lib
+          mountPath: /usr/lib/x86_64-linux-gnu/libltdl.so.7:/usr/lib/x86_64-linux-gnu/libltdl.so.7
+      volumes:
+      - name: jenkins-home
+        emptyDir: { }
+      - name: docker-home
+        emptyDir: { }
+      - name: docker-path 
+        emptyDir: { }
+      - name: lib
+        emptyDir: { }

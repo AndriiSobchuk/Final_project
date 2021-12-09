@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docke
+  namespace: jenkins-dev
+spec:
+  replicas: 1
+  selector: 
+    matchLabels:
+      app: docke
+  template:
+    metadata:
+      labels:
+        app: docke
+    spec:
+      containers:
+      - image: docker:latest
+        name: docker-con
+        volumeMounts: 
+          - mountPath: /var/run/docker.sock
+            name: docker-sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock

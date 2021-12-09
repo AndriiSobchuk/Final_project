@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - image: jenkins/jenkins:lts
+        name: container-0
+        ports:
+          - name: http-port
+            containerPort: 8080
+          - name: jnlp-port
+            containerPort: 50000
+        securityContext:
+          allowPrivilegeEscalation: true
+          privileged: true
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /var/jenkins_home
+            name: nfs1
+      - image: docker:19.03
+        name: docker-test
+        securityContext:
+          privileged: true
+        volumeMounts: 
+          - mountPath: /var/run/docker.sock
+            name: dockersock
+      volumes:
+      - name: nfs1
+        persistentVolumeClaim:
+          claimName: nfs1
+      - name: dockersock
+        persistentVolumeClaim:
+          claimName: nfs1

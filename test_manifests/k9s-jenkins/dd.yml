@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: jenkins
+  name: jenkins
+spec:
+  progressDeadlineSeconds: 2147483647
+  replicas: 1
+  revisionHistoryLimit: 2147483647
+  selector:
+    matchLabels:
+      app: jenkins
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - env:
+        - name: JAVA_OPTS
+          value: -Djenkins.install.runSetupWizard=false
+        image: jit2600/jenkins-docker:1.0
+        imagePullPolicy: Always
+        name: jenkins
+        ports:
+        - containerPort: 8080
+          name: http-port
+          protocol: TCP
+        - containerPort: 50000
+          name: jnlp-port
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/jenkins_home/
+          name: jenkins-home
+        - mountPath: /var/run/docker.sock
+          name: docker-sock-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: jenkins-home
+        persistentVolumeClaim:
+          claimName: nfs-pvc
+      - hostPath:
+          path: /var/run/docker.sock
+          type: File
+        name: docker-sock-volume
+status: {}
+

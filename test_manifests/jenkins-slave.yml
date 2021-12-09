@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: jenkins-slave
+  spec: 
+    replicas: 1
+    template: 
+      metadata: 
+        name: jenkins-slave
+        labels: 
+          name: jenkins-slave
+  spec: 
+    containers: 
+      - name: jenkins-slave
+        image: "csanchez/jenkins-swarm-slave:2.0-net-tools"
+        command: 
+          - "/usr/local/bin/jenkins-slave.sh"
+          - "-master"
+          - "http://jenkins:$(JENKINS_SERVICE_PORT_HTTP)"
+          - "-tunnel"
+          - "jenkins:$(JENKINS_SERVICE_PORT_SLAVE)"
+          - "-username"
+          - "jenkins"
+          - "-password"
+          - "jenkins"
+          - "-executors"
+          - "1"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "netstat -tan | grep ESTABLISHED"
+          initialDelaySeconds: 60
+          timeoutSeconds: 1
