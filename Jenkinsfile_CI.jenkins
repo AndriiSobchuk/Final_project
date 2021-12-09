@@ -1,0 +1,68 @@
+pipeline {
+  environment {
+    dockerimagename = "andriisobchuk/python-app"
+    dockerImage = ""
+  }
+    agent {
+    kubernetes { 
+        yaml ''' 
+    apiVersion: v1
+    kind: Pod
+    spec:
+     containers:    
+     - name: docker
+       image: docker:19.03.1-dind
+       securityContext:
+         privileged: true  
+        '''
+      defaultContainer 'docker'
+    }
+  }
+   triggers {
+        pollSCM('* * * * *')
+    }
+
+    stages {
+        stage('git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/AndriiSobchuk/python-app.git'
+            }
+    }
+    stage('Build image') {
+      steps{
+        script {
+          dockerImage = docker.build dockerimagename
+        }
+      }
+    }
+    stage('Pushing Image') {
+      environment {
+               registryCredential = 'dockerhub'
+           }
+      steps{
+        script {
+          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
+            dockerImage.push("latest")
+            dockerImage.push("release.${env.BUILD_ID}")
+           
+          }
+        }
+      }
+    }
+    stage ('Edit version') {
+        steps {
+         sh "sed -i 's/latest/release.${env.BUILD_ID}/g' python-app-rolling-hpa.yml"
+        }
+    }
+    stage('Deploy') {
+        steps {
+            script{
+                build job: 'CD-app-to-K8S',
+                parameters: [
+                    [ $class: 'StringParameterValue', name: 'FROM_BUILD', value: "${BUILD_NUMBER}"]
+                    ]
+            }
+        }
+    }
+ }
+}

@@ -1,0 +1,20 @@
+pipeline {
+    agent any 
+    parameters {
+        string(name: 'FROM_BUILD', defaultValue: '', description: 'Build source')
+    }
+    stages {
+        stage('git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/AndriiSobchuk/python-app.git'
+            }
+        }
+        stage('Deploy') {
+            steps {
+               script {
+                   kubernetesDeploy(configs: "python-app-rolling-hpa.yml", kubeconfigId: "kubernetes")
+                }
+            }
+        }
+    }
+}
